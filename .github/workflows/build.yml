@@ -1,0 +1,64 @@
+name: Build for Linux x86_64
+
+on:
+  push:
+    branches:
+      - savi
+    tags:
+      - 'v*'
+  pull_request:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  build-linux:
+    name: Build on Linux x86_64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Cache Go modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ runner.os }}-go-${{ hashFiles('**/go.sum') }}
+          restore-keys: |
+            ${{ runner.os }}-go-
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.14'
+
+      - name: Build binary
+        run: |
+          VERSION=$(if [[ "${{ github.ref }}" == refs/tags/* ]]; then echo "${{ github.ref_name }}_${{ github.run_number }}"; else echo "${{ github.ref_name }}.$(echo "${{ github.sha }}" | cut -c1-7)"; fi)
+          echo "Building version $VERSION"
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -trimpath -ldflags "-s -w -X 'main.Version=$VERSION'" -o rsce .
+          shasum -a 256 rsce > sha256sum.txt
+
+      - name: Smoke test binary
+        run: ./rsce --version
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: rsce-linux-x86_64
+          path: |
+            rsce
+            sha256sum.txt
+
+      - name: Upload to GitHub Releases
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            rsce
+            sha256sum.txt

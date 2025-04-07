@@ -17,11 +17,11 @@ import (
 )
 
 var log *log2.Logger
+var Version string
 
 const (
 	name        = "rsce-go"
 	author      = "evsio0n <i@evsio0n.com>"
-	version     = "0.0.1"
 	description = "rsce-go is a tool for unpack or pack RSCE, aka rock chip resource image. \r\n" +
 		"\t using -u to unpack, using -p to pack.\r\n" +
 		"\t -u [filepath]  unpack rockchip rsce image\r\n" +
@@ -32,7 +32,7 @@ func main() {
 	cmd := &cli.App{
 		Name:        name,
 		Author:      author,
-		Version:     version,
+		Version:     Version,
 		Description: description,
 		Flags: []cli.Flag{
 			cli.StringFlag{
